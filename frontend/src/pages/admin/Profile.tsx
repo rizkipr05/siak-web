@@ -28,6 +28,8 @@ const AdminProfile = () => {
     fetchProfile();
   }, []);
 
+  const fotoUrl = data?.Foto ? `${apiBase}/uploads/${data.Foto}` : null;
+
   return (
     <div className="w-full space-y-8 pb-10">
       <div className="bg-slate-950 p-8 md:p-14 rounded-[3rem] text-white relative overflow-hidden shadow-2xl border border-white/5">
@@ -61,8 +63,12 @@ const AdminProfile = () => {
       ) : (
         <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 md:p-10 space-y-8">
           <div className="flex items-center gap-5">
-            <div className="w-16 h-16 bg-indigo-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-indigo-200 uppercase font-black text-2xl">
-              {(data.nama_admin || 'A').charAt(0)}
+            <div className="w-16 h-16 bg-indigo-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-indigo-200 uppercase font-black text-2xl overflow-hidden">
+              {fotoUrl ? (
+                <img src={fotoUrl} alt="Profil" className="h-full w-full object-cover" />
+              ) : (
+                (data.nama_admin || 'A').charAt(0)
+              )}
             </div>
             <div>
               <p className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Nama</p>

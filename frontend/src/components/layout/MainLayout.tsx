@@ -58,16 +58,36 @@ const MainLayout = () => {
           const result = await res.json();
           const foto = result?.data?.Foto;
           setProfilePhotoUrl(foto ? `${apiBase}/uploads/${foto}` : null);
-        } else if (userData.role === 'dosen') {
+          return;
+        }
+        if (userData.role === 'dosen') {
           const res = await fetch(`${apiBase}/api/dosen/profile`, {
             headers: { 'Authorization': `Bearer ${token}` }
           });
           const result = await res.json();
           const foto = result?.data?.Foto;
           setProfilePhotoUrl(foto ? `${apiBase}/uploads/${foto}` : null);
-        } else {
-          setProfilePhotoUrl(null);
+          return;
         }
+        if (userData.role === 'pegawai') {
+          const res = await fetch(`${apiBase}/api/staff/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const result = await res.json();
+          const foto = result?.data?.Foto;
+          setProfilePhotoUrl(foto ? `${apiBase}/uploads/${foto}` : null);
+          return;
+        }
+        if (userData.role === 'admin') {
+          const res = await fetch(`${apiBase}/api/admin/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const result = await res.json();
+          const foto = result?.data?.Foto;
+          setProfilePhotoUrl(foto ? `${apiBase}/uploads/${foto}` : null);
+          return;
+        }
+        setProfilePhotoUrl(null);
       } catch (err) {
         setProfilePhotoUrl(null);
       }
