@@ -1,0 +1,516 @@
+import { useEffect, useMemo, useState } from 'react';
+import { ShieldCheck, Activity, Users, Settings, Calendar, FileText, ClipboardCheck, BookOpen, Database } from 'lucide-react';
+
+const AdminConsole = () => {
+  const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
+  const token = useMemo(() => localStorage.getItem('token'), []);
+
+  const [activeTab, setActiveTab] = useState<'monitoring' | 'users' | 'periods' | 'krs' | 'khs' | 'nilai' | 'absensi'>('monitoring');
+
+  const [summary, setSummary] = useState<any>(null);
+  const [health, setHealth] = useState<any>(null);
+
+  const [users, setUsers] = useState<any[]>([]);
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'pegawai', nama: '' });
+  const [roleUpdate, setRoleUpdate] = useState({ id_user: '', role: 'pegawai' });
+
+  const [periods, setPeriods] = useState<any[]>([]);
+  const [newPeriod, setNewPeriod] = useState({ tahun_ajaran: '', semester: 'Ganjil' });
+
+  const [krsFilters, setKrsFilters] = useState({ npm: '', status: '' });
+  const [krsList, setKrsList] = useState<any[]>([]);
+  const [krsUpdate, setKrsUpdate] = useState({ id_krs: '', status: 'Disetujui' });
+
+  const [khsNpm, setKhsNpm] = useState('');
+  const [khsList, setKhsList] = useState<any[]>([]);
+
+  const [nilaiFilters, setNilaiFilters] = useState({ npm: '', id_jadwal: '' });
+  const [nilaiList, setNilaiList] = useState<any[]>([]);
+  const [nilaiUpdate, setNilaiUpdate] = useState({ id_krs: '', nsikap: '', ntugas: '', nuts: '', nuas: '' });
+
+  const [absensiFilters, setAbsensiFilters] = useState({ npm: '', id_jadwal: '' });
+  const [absensiList, setAbsensiList] = useState<any[]>([]);
+
+  const fetchSummary = async () => {
+    if (!token) return;
+    const res = await fetch(`${apiBase}/api/admin/summary`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setSummary(data.data || null);
+  };
+
+  const fetchHealth = async () => {
+    if (!token) return;
+    const res = await fetch(`${apiBase}/api/admin/health`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setHealth(data.data || null);
+  };
+
+  const fetchUsers = async () => {
+    if (!token) return;
+    const res = await fetch(`${apiBase}/api/admin/users`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setUsers(Array.isArray(data.data) ? data.data : []);
+  };
+
+  const createUser = async () => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(newUser)
+    });
+    setNewUser({ username: '', password: '', role: 'pegawai', nama: '' });
+    fetchUsers();
+  };
+
+  const updateRole = async () => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/users/role`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(roleUpdate)
+    });
+    fetchUsers();
+  };
+
+  const deleteUser = async (id_user: string) => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/users/${id_user}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchUsers();
+  };
+
+  const fetchPeriods = async () => {
+    if (!token) return;
+    const res = await fetch(`${apiBase}/api/admin/academic-periods`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setPeriods(Array.isArray(data.data) ? data.data : []);
+  };
+
+  const createPeriod = async () => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/academic-periods`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(newPeriod)
+    });
+    setNewPeriod({ tahun_ajaran: '', semester: 'Ganjil' });
+    fetchPeriods();
+  };
+
+  const activatePeriod = async (id: number) => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/academic-periods/${id}/activate`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    fetchPeriods();
+  };
+
+  const fetchKrs = async () => {
+    if (!token) return;
+    const params = new URLSearchParams();
+    if (krsFilters.npm) params.append('npm', krsFilters.npm);
+    if (krsFilters.status) params.append('status', krsFilters.status);
+    const res = await fetch(`${apiBase}/api/admin/krs?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setKrsList(Array.isArray(data.data) ? data.data : []);
+  };
+
+  const updateKrsStatus = async () => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/krs/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify(krsUpdate)
+    });
+    fetchKrs();
+  };
+
+  const fetchKhs = async () => {
+    if (!token || !khsNpm) return;
+    const res = await fetch(`${apiBase}/api/admin/khs?npm=${khsNpm}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setKhsList(Array.isArray(data.data) ? data.data : []);
+  };
+
+  const fetchNilai = async () => {
+    if (!token) return;
+    const params = new URLSearchParams();
+    if (nilaiFilters.npm) params.append('npm', nilaiFilters.npm);
+    if (nilaiFilters.id_jadwal) params.append('id_jadwal', nilaiFilters.id_jadwal);
+    const res = await fetch(`${apiBase}/api/admin/nilai?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setNilaiList(Array.isArray(data.data) ? data.data : []);
+  };
+
+  const updateNilai = async () => {
+    if (!token) return;
+    await fetch(`${apiBase}/api/admin/nilai`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({
+        id_krs: nilaiUpdate.id_krs,
+        nsikap: nilaiUpdate.nsikap,
+        ntugas: nilaiUpdate.ntugas,
+        nuts: nilaiUpdate.nuts,
+        nuas: nilaiUpdate.nuas
+      })
+    });
+    fetchNilai();
+  };
+
+  const fetchAbsensi = async () => {
+    if (!token) return;
+    const params = new URLSearchParams();
+    if (absensiFilters.npm) params.append('npm', absensiFilters.npm);
+    if (absensiFilters.id_jadwal) params.append('id_jadwal', absensiFilters.id_jadwal);
+    const res = await fetch(`${apiBase}/api/admin/absensi?${params.toString()}`, { headers: { Authorization: `Bearer ${token}` } });
+    const data = await res.json();
+    setAbsensiList(Array.isArray(data.data) ? data.data : []);
+  };
+
+  useEffect(() => {
+    if (activeTab === 'monitoring') {
+      fetchSummary();
+      fetchHealth();
+    } else if (activeTab === 'users') {
+      fetchUsers();
+    } else if (activeTab === 'periods') {
+      fetchPeriods();
+    }
+  }, [activeTab]);
+
+  const tabs = [
+    { key: 'monitoring', label: 'Monitoring', icon: <Activity size={16} /> },
+    { key: 'users', label: 'Users & Akses', icon: <Users size={16} /> },
+    { key: 'periods', label: 'Tahun Akademik', icon: <Calendar size={16} /> },
+    { key: 'krs', label: 'KRS', icon: <ClipboardCheck size={16} /> },
+    { key: 'khs', label: 'KHS', icon: <FileText size={16} /> },
+    { key: 'nilai', label: 'Nilai', icon: <BookOpen size={16} /> },
+    { key: 'absensi', label: 'Absensi', icon: <Database size={16} /> }
+  ] as const;
+
+  return (
+    <div className="w-full space-y-8 pb-10">
+      <div className="bg-slate-950 p-8 md:p-12 rounded-[2.5rem] text-white shadow-2xl border border-white/5 flex items-center justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em]">
+            <ShieldCheck size={12} className="animate-pulse" /> ADMIN CONSOLE
+          </div>
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-tighter">Administrasi Sistem</h1>
+        </div>
+        <div className="hidden md:flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+          Maintenance <span>•</span> Monitoring <span>•</span> Control
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`px-4 py-2 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
+              activeTab === t.key ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white border-slate-100 text-slate-500'
+            }`}
+          >
+            {t.icon} {t.label}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'monitoring' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Activity size={18} className="text-indigo-600" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Monitoring</p>
+            </div>
+            <pre className="text-xs text-slate-600 whitespace-pre-wrap">{JSON.stringify(summary, null, 2)}</pre>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Settings size={18} className="text-indigo-600" />
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Maintenance</p>
+            </div>
+            <pre className="text-xs text-slate-600 whitespace-pre-wrap">{JSON.stringify(health, null, 2)}</pre>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'users' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Buat User</p>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Username" value={newUser.username} onChange={(e) => setNewUser({ ...newUser, username: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser({ ...newUser, password: e.target.value })} />
+              <select className="h-12 px-4 rounded-xl bg-slate-50" value={newUser.role} onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}>
+                <option value="pegawai">pegawai</option>
+                <option value="admin">admin</option>
+                <option value="mahasiswa">mahasiswa</option>
+                <option value="dosen">dosen</option>
+              </select>
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Nama" value={newUser.nama} onChange={(e) => setNewUser({ ...newUser, nama: e.target.value })} />
+            </div>
+            <button onClick={createUser} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Simpan</button>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Hak Akses (Admin/Pegawai)</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="ID User" value={roleUpdate.id_user} onChange={(e) => setRoleUpdate({ ...roleUpdate, id_user: e.target.value })} />
+              <select className="h-12 px-4 rounded-xl bg-slate-50" value={roleUpdate.role} onChange={(e) => setRoleUpdate({ ...roleUpdate, role: e.target.value })}>
+                <option value="pegawai">pegawai</option>
+                <option value="admin">admin</option>
+              </select>
+              <button onClick={updateRole} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Update</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Daftar Users</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-[10px] uppercase tracking-widest text-slate-400">
+                    <th className="py-2">ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Nama</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map((u) => (
+                    <tr key={u.id_user} className="border-t border-slate-100">
+                      <td className="py-2">{u.id_user}</td>
+                      <td>{u.username}</td>
+                      <td>{u.role}</td>
+                      <td>{u.nama || '-'}</td>
+                      <td>
+                        <button onClick={() => deleteUser(u.id_user)} className="text-red-600 text-[10px] font-black uppercase">hapus</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'periods' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-4">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Tambah Periode</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="2025/2026" value={newPeriod.tahun_ajaran} onChange={(e) => setNewPeriod({ ...newPeriod, tahun_ajaran: e.target.value })} />
+              <select className="h-12 px-4 rounded-xl bg-slate-50" value={newPeriod.semester} onChange={(e) => setNewPeriod({ ...newPeriod, semester: e.target.value })}>
+                <option value="Ganjil">Ganjil</option>
+                <option value="Genap">Genap</option>
+              </select>
+              <button onClick={createPeriod} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Simpan</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Daftar Periode</p>
+            <div className="space-y-2">
+              {periods.map((p) => (
+                <div key={p.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
+                  <span className="text-sm font-bold text-slate-700">{p.tahun_ajaran} • {p.semester}</span>
+                  <button onClick={() => activatePeriod(p.id)} className={`text-[10px] font-black uppercase px-3 py-1 rounded-lg ${p.aktif ? 'bg-emerald-600 text-white' : 'bg-white text-slate-600'}`}>
+                    {p.aktif ? 'aktif' : 'set aktif'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'krs' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Filter KRS</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="NPM" value={krsFilters.npm} onChange={(e) => setKrsFilters({ ...krsFilters, npm: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Status (Menunggu/Disetujui/Ditolak)" value={krsFilters.status} onChange={(e) => setKrsFilters({ ...krsFilters, status: e.target.value })} />
+              <button onClick={fetchKrs} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Cari</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Update Status KRS</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="ID KRS" value={krsUpdate.id_krs} onChange={(e) => setKrsUpdate({ ...krsUpdate, id_krs: e.target.value })} />
+              <select className="h-12 px-4 rounded-xl bg-slate-50" value={krsUpdate.status} onChange={(e) => setKrsUpdate({ ...krsUpdate, status: e.target.value })}>
+                <option value="Menunggu">Menunggu</option>
+                <option value="Disetujui">Disetujui</option>
+                <option value="Ditolak">Ditolak</option>
+              </select>
+              <button onClick={updateKrsStatus} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Update</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-widest text-slate-400">
+                  <th className="py-2">ID</th>
+                  <th>NPM</th>
+                  <th>Matkul</th>
+                  <th>Kelas</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {krsList.map((k) => (
+                  <tr key={k.id_krs} className="border-t border-slate-100">
+                    <td className="py-2">{k.id_krs}</td>
+                    <td>{k.NPM}</td>
+                    <td>{k.NamaMatkul}</td>
+                    <td>{k.Kelas}</td>
+                    <td>{k.status_verifikasi || 'Menunggu'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'khs' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Cari KHS</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="NPM" value={khsNpm} onChange={(e) => setKhsNpm(e.target.value)} />
+              <button onClick={fetchKhs} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Cari</button>
+            </div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-widest text-slate-400">
+                  <th className="py-2">Matkul</th>
+                  <th>SKS</th>
+                  <th>NA</th>
+                  <th>Huruf</th>
+                </tr>
+              </thead>
+              <tbody>
+                {khsList.map((k, idx) => (
+                  <tr key={`${k.KodeMK}-${idx}`} className="border-t border-slate-100">
+                    <td className="py-2">{k.NamaMatkul}</td>
+                    <td>{k.SKS}</td>
+                    <td>{k.NA}</td>
+                    <td>{k.Huruf}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'nilai' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Filter Nilai</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="NPM" value={nilaiFilters.npm} onChange={(e) => setNilaiFilters({ ...nilaiFilters, npm: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="ID Jadwal" value={nilaiFilters.id_jadwal} onChange={(e) => setNilaiFilters({ ...nilaiFilters, id_jadwal: e.target.value })} />
+              <button onClick={fetchNilai} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Cari</button>
+            </div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Update Nilai</p>
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="ID KRS" value={nilaiUpdate.id_krs} onChange={(e) => setNilaiUpdate({ ...nilaiUpdate, id_krs: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Sikap" value={nilaiUpdate.nsikap} onChange={(e) => setNilaiUpdate({ ...nilaiUpdate, nsikap: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="Tugas" value={nilaiUpdate.ntugas} onChange={(e) => setNilaiUpdate({ ...nilaiUpdate, ntugas: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="UTS" value={nilaiUpdate.nuts} onChange={(e) => setNilaiUpdate({ ...nilaiUpdate, nuts: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="UAS" value={nilaiUpdate.nuas} onChange={(e) => setNilaiUpdate({ ...nilaiUpdate, nuas: e.target.value })} />
+            </div>
+            <button onClick={updateNilai} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Simpan</button>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-widest text-slate-400">
+                  <th className="py-2">ID KRS</th>
+                  <th>NPM</th>
+                  <th>Matkul</th>
+                  <th>SKS</th>
+                  <th>Sikap</th>
+                  <th>Tugas</th>
+                  <th>UTS</th>
+                  <th>UAS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {nilaiList.map((n) => (
+                  <tr key={n.id_krs} className="border-t border-slate-100">
+                    <td className="py-2">{n.id_krs}</td>
+                    <td>{n.NPM}</td>
+                    <td>{n.NamaMatkul}</td>
+                    <td>{n.Kelas}</td>
+                    <td>{n.nsikap}</td>
+                    <td>{n.ntugas}</td>
+                    <td>{n.nuts}</td>
+                    <td>{n.nuas}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'absensi' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Filter Absensi</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="NPM" value={absensiFilters.npm} onChange={(e) => setAbsensiFilters({ ...absensiFilters, npm: e.target.value })} />
+              <input className="h-12 px-4 rounded-xl bg-slate-50" placeholder="ID Jadwal" value={absensiFilters.id_jadwal} onChange={(e) => setAbsensiFilters({ ...absensiFilters, id_jadwal: e.target.value })} />
+              <button onClick={fetchAbsensi} className="px-4 py-2 rounded-xl bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest">Cari</button>
+            </div>
+          </div>
+          <div className="bg-white rounded-[2rem] border border-slate-100 p-6 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left text-[10px] uppercase tracking-widest text-slate-400">
+                  <th className="py-2">NPM</th>
+                  <th>Mahasiswa</th>
+                  <th>Matkul</th>
+                  <th>Pertemuan</th>
+                  <th>Status</th>
+                  <th>Tanggal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {absensiList.map((a) => (
+                  <tr key={a.id_absen} className="border-t border-slate-100">
+                    <td className="py-2">{a.NPM}</td>
+                    <td>{a.NamaMahasiswa}</td>
+                    <td>{a.NamaMatkul}</td>
+                    <td>{a.pertemuan_ke}</td>
+                    <td>{a.status_hadir}</td>
+                    <td>{a.tanggal?.slice(0, 10)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AdminConsole;
