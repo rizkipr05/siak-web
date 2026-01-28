@@ -38,7 +38,7 @@ const upload = multer({
 router.get("/summary", verifyRole('admin'), adminController.getSummary);
 router.get("/health", verifyRole('admin'), adminController.getHealth);
 router.get("/profile", verifyRole('admin'), adminProfileController.getProfile);
-router.put("/profile", verifyRole('admin'), adminProfileController.updateProfile);
+router.put("/profile", verifyRole('admin'), upload.single('foto'), adminProfileController.updateProfile);
 
 router.get("/users", verifyRole('admin'), adminController.listUsers);
 router.post("/users", verifyRole('admin'), adminController.createUser);
@@ -49,16 +49,22 @@ router.put("/users/role", verifyRole('admin'), adminController.updateUserRole);
 router.get("/academic-periods", verifyRole('admin'), adminController.listAcademicPeriods);
 router.post("/academic-periods", verifyRole('admin'), adminController.createAcademicPeriod);
 router.put("/academic-periods/:id/activate", verifyRole('admin'), adminController.setActiveAcademicPeriod);
+router.put("/academic-periods/:id", verifyRole('admin'), adminController.updateAcademicPeriod);
+router.delete("/academic-periods/:id", verifyRole('admin'), adminController.deleteAcademicPeriod);
 
 router.get("/krs", verifyRole('admin'), adminController.listKRS);
 router.put("/krs/status", verifyRole('admin'), adminController.updateKRSStatus);
+router.delete("/krs/:id_krs", verifyRole('admin'), adminController.deleteKRS);
 
 router.get("/khs", verifyRole('admin'), adminController.listKHS);
 
 router.get("/nilai", verifyRole('admin'), adminController.listNilai);
 router.put("/nilai", verifyRole('admin'), adminController.updateNilai);
+router.delete("/nilai/:id_krs", verifyRole('admin'), adminController.deleteNilai);
 
 router.get("/absensi", verifyRole('admin'), adminController.listAbsensi);
+router.put("/absensi/:id_absen", verifyRole('admin'), adminController.updateAbsensiStatus);
+router.delete("/absensi/:id_absen", verifyRole('admin'), adminController.deleteAbsensi);
 
 // Reports (admin only)
 router.get("/reports/krs", verifyRole('admin'), staffController.getCetakKRS);

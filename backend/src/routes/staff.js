@@ -50,7 +50,7 @@ router.post('/input-dosen', upload.single('foto'), staffController.inputDosen);
 router.put('/update-dosen/:nidn', upload.single('foto'), staffController.updateDosen);
 router.delete('/delete-dosen/:nidn', staffController.deleteDosen);
 router.get('/profile', verifyRole('pegawai'), pegawaiProfileController.getProfile);
-router.put('/profile', verifyRole('pegawai'), pegawaiProfileController.updateProfile);
+router.put('/profile', verifyRole('pegawai'), upload.single('foto'), pegawaiProfileController.updateProfile);
 
 // Pegawai-only master data & jadwal
 router.get('/matakuliah', verifyRole('pegawai'), pegawaiMatkulController.getMatkulList);

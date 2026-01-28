@@ -1,4 +1,7 @@
 const db = require('../config/db');
+const fs = require('fs');
+const path = require('path');
+const DEFAULT_PEGAWAI_FOTO = 'default_pgw.jpg';
 
 const getProfile = async (req, res) => {
     const { id_user } = req.user || {};
@@ -13,7 +16,8 @@ const getProfile = async (req, res) => {
                 p.NIP,
                 p.Nama,
                 p.Jabatan,
-                p.JenisKelamin
+                p.JenisKelamin,
+                p.Foto
             FROM users u
             JOIN pegawai p ON u.id_user = p.id_user
             WHERE u.id_user = ?
@@ -37,9 +41,26 @@ const updateProfile = async (req, res) => {
     }
     const { NIP, Nama, Jabatan, JenisKelamin } = req.body;
     try {
+        let newFoto = null;
+        if (req.file) {
+            newFoto = req.file.filename;
+            const [rows] = await db.query(`SELECT Foto FROM pegawai WHERE id_user = ? LIMIT 1`, [id_user]);
+            const oldFoto = rows[0]?.Foto;
+            if (oldFoto && oldFoto !== DEFAULT_PEGAWAI_FOTO) {
+                const oldPath = path.join(__dirname, '../uploads/', oldFoto);
+                if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+            }
+        }
+
         await db.query(
-            `UPDATE pegawai SET NIP = COALESCE(?, NIP), Nama = COALESCE(?, Nama), Jabatan = COALESCE(?, Jabatan), JenisKelamin = COALESCE(?, JenisKelamin) WHERE id_user = ?`,
-            [NIP || null, Nama || null, Jabatan || null, JenisKelamin || null, id_user]
+            `UPDATE pegawai 
+             SET NIP = COALESCE(?, NIP), 
+                 Nama = COALESCE(?, Nama), 
+                 Jabatan = COALESCE(?, Jabatan), 
+                 JenisKelamin = COALESCE(?, JenisKelamin),
+                 Foto = COALESCE(?, Foto)
+             WHERE id_user = ?`,
+            [NIP || null, Nama || null, Jabatan || null, JenisKelamin || null, newFoto, id_user]
         );
         res.json({ success: true, message: 'Profil pegawai diperbarui' });
     } catch (error) {

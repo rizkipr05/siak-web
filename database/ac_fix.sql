@@ -82,6 +82,7 @@ CREATE TABLE `admin` (
   `id_admin` varchar(20) NOT NULL,
   `nama_admin` text NOT NULL,
   `email` varchar(100) DEFAULT NULL,
+  `Foto` varchar(255) DEFAULT 'default_admin.jpg',
   `id_user` varchar(20) DEFAULT NULL,
   PRIMARY KEY (`id_admin`),
   KEY `id_user` (`id_user`),
@@ -95,7 +96,7 @@ CREATE TABLE `admin` (
 
 LOCK TABLES `admin` WRITE;
 /*!40000 ALTER TABLE `admin` DISABLE KEYS */;
-INSERT INTO `admin` VALUES ('A01','Hengky Hengker','admin@siak.com','ADM001');
+INSERT INTO `admin` VALUES ('A01','Hengky Hengker','admin@siak.com','default_admin.jpg','ADM001');
 /*!40000 ALTER TABLE `admin` ENABLE KEYS */;
 UNLOCK TABLES;
 

@@ -68,9 +68,9 @@ export const ModalCustom = ({
           {title}
         </h3>
 
-        <p className="text-slate-600 text-[13px] md:text-sm mb-8 md:mb-10 font-bold leading-relaxed px-2 md:px-4">
+        <div className="text-slate-600 text-[13px] md:text-sm mb-8 md:mb-10 font-bold leading-relaxed px-2 md:px-4">
           {message}
-        </p>
+        </div>
 
         <div className={`${!onClose ? 'flex justify-center' : 'grid grid-cols-2'} gap-3 md:gap-4`}>
           {onClose && (

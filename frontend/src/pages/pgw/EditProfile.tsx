@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, Save, User, IdCard, Briefcase, Users } from 'lucide-react';
+import { Sparkles, Save, User, IdCard, Briefcase, Users, ImageUp } from 'lucide-react';
 import LoadAnimate from '../../components/layout/LoadAnimate';
 import { ModalCustom } from '../../components/layout/ModalCustom';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,9 @@ const PegawaiEditProfile = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [form, setForm] = useState({ NIP: '', Nama: '', Jabatan: '', JenisKelamin: '' });
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const apiBase = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:5000';
   const token = localStorage.getItem('token');
@@ -29,6 +32,7 @@ const PegawaiEditProfile = () => {
             Jabatan: data.Jabatan || '',
             JenisKelamin: data.JenisKelamin || ''
           });
+          if (data.Foto) setPhotoUrl(`${apiBase}/uploads/${data.Foto}`);
         }
       } finally {
         setTimeout(() => setLoading(false), 600);
@@ -41,10 +45,17 @@ const PegawaiEditProfile = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
+      const formData = new FormData();
+      formData.append('NIP', form.NIP);
+      formData.append('Nama', form.Nama);
+      formData.append('Jabatan', form.Jabatan || '');
+      formData.append('JenisKelamin', form.JenisKelamin || '');
+      if (photoFile) formData.append('foto', photoFile);
+
       const res = await fetch(`${apiBase}/api/staff/profile`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(form)
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
       });
       const result = await res.json();
       if (res.ok && result.success) setShowSuccess(true);
@@ -78,6 +89,31 @@ const PegawaiEditProfile = () => {
         </div>
       ) : (
         <form onSubmit={handleSave} className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm p-8 md:p-10 space-y-6">
+          <div className="flex items-center gap-6">
+            <div className="w-20 h-20 bg-emerald-600 rounded-2xl text-white flex items-center justify-center shadow-lg shadow-emerald-200 uppercase font-black text-2xl overflow-hidden">
+              {photoPreview || photoUrl ? (
+                <img src={photoPreview || photoUrl || ''} alt="Profil" className="h-full w-full object-cover" />
+              ) : (
+                form.Nama?.charAt(0) || 'P'
+              )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Foto Profil</label>
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  setPhotoFile(file);
+                  setPhotoPreview(file ? URL.createObjectURL(file) : null);
+                }}
+                className="text-[10px] font-bold uppercase tracking-widest"
+              />
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                <ImageUp size={14} /> Upload saat simpan
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">NIP</label>
