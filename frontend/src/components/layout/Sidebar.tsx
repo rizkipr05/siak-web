@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import UnikaLogo from '../../assets/unika.png';
 import AdminMenu from './sidebar/AdminMenu';
+import { ModalCustom } from './ModalCustom';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -43,6 +44,7 @@ const Sidebar = ({
 
   const [isLaporanOpen, setIsLaporanOpen] = useState(false);
   const [isInputOpen, setIsInputOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const isDosen = userData?.role === 'dosen';
   const isAdmin = userData?.role === 'admin';
@@ -372,13 +374,26 @@ const Sidebar = ({
         </nav>
 
         <div className="absolute bottom-0 w-full p-4 border-t border-slate-50 bg-white">
-          <button onClick={handleLogout} className="flex items-center w-full py-3.5 text-red-500 hover:bg-red-50 rounded-2xl transition-all group">
+          <button onClick={() => setShowLogoutConfirm(true)} className="flex items-center w-full py-3.5 text-red-500 hover:bg-red-50 rounded-2xl transition-all group">
             <div className="w-12 flex justify-center shrink-0">
               <LogOut size={22} className="group-hover:-translate-x-1 transition-transform" />
             </div>
             {isSidebarOpen && <span className="font-bold text-[11px] uppercase tracking-widest">Keluar</span>}
           </button>
         </div>
+
+        <ModalCustom
+          isOpen={showLogoutConfirm}
+          variant="warning"
+          title="Keluar dari aplikasi?"
+          message="Apakah kamu yakin ingin keluar dari akun ini?"
+          confirmText="Keluar"
+          onClose={() => setShowLogoutConfirm(false)}
+          onConfirm={() => {
+            setShowLogoutConfirm(false);
+            handleLogout();
+          }}
+        />
       </aside>
     </>
   );
